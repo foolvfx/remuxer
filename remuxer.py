@@ -36,8 +36,15 @@ def remux_all(remove: bool, input_path: str, output_path: str):
             
 def remux_file(input_file: str, output_path: str):
     command = f"ffmpeg -y -hwaccel cuda -i \"{input_file}\" -map 0 -codec copy \"{output_path}\""
-    result = subprocess.call(command,shell=True, stdout=subprocess.STDOUT, stderr=subprocess.STDOUT)
-    return result
+
+    proc = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+    try:
+        outs, errs = proc.communicate(timeout=15)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        outs, errs = proc.communicate()
+        
+    return proc.returncode
 
 def verify_paths(args) -> bool:
     if not args.input:
